@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum Method {
     GET,
     PATCH,
@@ -12,7 +12,6 @@ pub struct Request {
     pub path: String,
     pub method: Method,
 }
-use std::thread;
 pub async fn return_request_struct(unparsed: Vec<String>) -> Request {
     let simple_request = &unparsed[0];
     let contents: Vec<_> = simple_request.split(" ").collect();
