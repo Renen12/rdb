@@ -63,12 +63,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 
 [[package]]
-name = "http_parser"
-version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51920dcf9ba510c41992f2095e8a2fc7f1c34f3613c83d1c4432c32145baf3a5"
-
-[[package]]
 name = "libc"
 version = "0.2.174"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -170,7 +164,6 @@ dependencies = [
 name = "rdb"
 version = "0.1.0"
 dependencies = [
- "http_parser",
  "tokio",
 ]
 

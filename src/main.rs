@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     database::get_value_from_key,
-    parser::{Method, return_request_struct},
+    parser::{Method, Request, return_request_struct},
 };
 static HELP_MESSAGE: &'static str = "--db=database.rdb — specify the database path";
 #[tokio::main]
@@ -42,26 +42,39 @@ async fn handle_connection(mut stream: TcpStream, database_path: String) {
         .lines()
         .map(|r| match r {
             Ok(v) => v,
-            Err(_) => String::from(""),
+            Err(_) => {
+                eprintln!("Cannot read from stream");
+                String::new()
+            }
         })
         .take_while(|line| !line.is_empty())
         .collect();
-    let request = return_request_struct(unparsed.clone()).await;
+    let request = match return_request_struct(unparsed.clone()).await {
+        Some(v) => v,
+        None => {
+            eprintln!("Cannot build request struct");
+            Request {
+                path: "_REQUEST_STRUCT_FAIL".to_owned(),
+                method: Method::UNDEFINED,
+            }
+        }
+    };
     if request.method == Method::GET {
+        let mut status_line = "HTTP/1.1 200 OK\r\n\r\n";
         println!("{}", request.path);
         let key_name = request.path.replace("/", "");
         let value = match get_value_from_key(key_name, database_path) {
             Some(v) => v,
             None => {
-                match stream.shutdown(std::net::Shutdown::Read) {
-                    Ok(_) => (),
-                    Err(_) => {
-                        eprintln!("Cannot shutdown connection");
-                    }
-                }
-                String::from("Invalid key name received")
+                status_line = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
+                String::from("Key name not found")
             }
         };
-        stream.write_all(value.as_bytes()).unwrap();
+        let value_length = value.len();
+        let response = format!("{status_line}\r\n\r\n\r\n {value}");
+        stream.write_all(response.as_bytes()).unwrap();
+    }
+    if request.method == Method::UNDEFINED {
+        eprintln!("Request is not valid.");
     }
 }
