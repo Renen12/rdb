@@ -1,4 +1,7 @@
-use std::{io::Write, net::TcpStream};
+use std::{
+    io::{Read, Write},
+    net::TcpStream,
+};
 
 use crate::{
     database::get_value_from_key,
@@ -19,6 +22,9 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
         let response = format!("{status_line}\r\nContent-Length: {value_length}\r\n\r\n{value}");
         println!("{response}");
         stream.write_all(response.as_bytes()).unwrap();
+    }
+    if request.method == Method::POST {
+        let mut status_line = "HTTP/1.1 200 OK";
     }
     if request.method == Method::UNDEFINED {
         eprintln!("Request is not valid.");

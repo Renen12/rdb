@@ -3,7 +3,8 @@ mod handle_request;
 mod parser;
 use std::{
     env::args,
-    io::{BufRead, BufReader},
+    fs::{File, OpenOptions},
+    io::{BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
     process::exit,
 };
@@ -12,17 +13,32 @@ use crate::{
     parser::{Method, Request, return_request_struct},
     threadpool::ThreadPool,
 };
+pub fn return_log_file() -> Option<File> {
+    let mut options = OpenOptions::new();
+    options.create(true);
+    options.append(true);
+    match options.open("rdb.log") {
+        Ok(v) => return Some(v),
+        Err(_) => {
+            return None;
+        }
+    }
+}
 pub fn get_database_path() -> String {
     let args: Vec<String> = args().collect();
     for arg in args {
         if arg.contains("--db") {
-            return String::from(match arg.split("=").collect::<Vec<&str>>().get(1) {
+            let mut result = String::from(match arg.split("=").collect::<Vec<&str>>().get(1) {
                 Some(v) => v,
                 None => {
                     eprintln!("Failed to read db path from args, falling back to default");
                     "database.rdb"
                 }
             });
+            if result.is_empty() {
+                result = "database.rdb".to_owned();
+            }
+            return result;
         }
     }
     return String::from("database.rdb");
@@ -65,6 +81,7 @@ fn handle_connection(stream: TcpStream, database_path: &str) {
         })
         .take_while(|line| !line.is_empty())
         .collect();
+
     let request = match return_request_struct(unparsed.clone()) {
         Some(v) => v,
         None => {
@@ -75,5 +92,15 @@ fn handle_connection(stream: TcpStream, database_path: &str) {
             }
         }
     };
+    return_log_file().inspect(|mut v| {
+        v.write(
+            format!(
+                "Unparsed: {:?}, Path: {}, Method: {:?}\n",
+                unparsed, request.path, request.method
+            )
+            .as_bytes(),
+        )
+        .unwrap();
+    });
     handle_request::handle_request(request, stream, database_path.to_owned());
 }

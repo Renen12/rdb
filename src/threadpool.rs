@@ -63,7 +63,7 @@ impl ThreadPool {
         self.sender.as_ref().unwrap().send(job).unwrap();
     }
 }
-
+#[allow(dead_code)]
 struct Worker {
     id: usize,
     thread: Option<thread::JoinHandle<()>>,
