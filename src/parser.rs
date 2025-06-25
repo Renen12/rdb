@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub enum Method {
     GET,
     PATCH,
@@ -7,7 +7,7 @@ pub enum Method {
     UNDEFINED,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Request {
     pub path: String,
     pub method: Method,

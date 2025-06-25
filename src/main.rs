@@ -1,16 +1,14 @@
 mod database;
+mod handle_request;
 mod parser;
 use std::{
     env::args,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader},
     net::{TcpListener, TcpStream},
     process::exit,
 };
 
-use crate::{
-    database::get_value_from_key,
-    parser::{Method, Request, return_request_struct},
-};
+use crate::parser::{Method, Request, return_request_struct};
 static HELP_MESSAGE: &'static str = "--db=database.rdb — specify the database path";
 #[tokio::main]
 async fn main() {
@@ -37,7 +35,7 @@ async fn main() {
         handle_connection(stream, database_path.clone()).await;
     }
 }
-async fn handle_connection(mut stream: TcpStream, database_path: String) {
+async fn handle_connection(stream: TcpStream, database_path: String) {
     let unparsed: Vec<_> = BufReader::new(&stream)
         .lines()
         .map(|r| match r {
@@ -59,22 +57,5 @@ async fn handle_connection(mut stream: TcpStream, database_path: String) {
             }
         }
     };
-    if request.method == Method::GET {
-        let mut status_line = "HTTP/1.1 200 OK\r\n\r\n";
-        println!("{}", request.path);
-        let key_name = request.path.replace("/", "");
-        let value = match get_value_from_key(key_name, database_path) {
-            Some(v) => v,
-            None => {
-                status_line = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
-                String::from("Key name not found")
-            }
-        };
-        let value_length = value.len();
-        let response = format!("{status_line}\r\n\r\n\r\n {value}");
-        stream.write_all(response.as_bytes()).unwrap();
-    }
-    if request.method == Method::UNDEFINED {
-        eprintln!("Request is not valid.");
-    }
+    handle_request::handle_request(request, stream, database_path);
 }
