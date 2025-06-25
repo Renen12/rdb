@@ -18,7 +18,7 @@ pub fn get_db(path: String) -> String {
     };
     database_contents
 }
-pub fn get_value_from_key(key: String, db_path: String) -> Option<String> {
+pub fn get_value_from_key(key: &String, db_path: String) -> Option<String> {
     let database = get_db(db_path);
     for key_and_value in database.split("\n") {
         let key_and_value: Vec<&str> = key_and_value.split("=").collect();
@@ -34,7 +34,7 @@ pub fn get_value_from_key(key: String, db_path: String) -> Option<String> {
                 return None;
             }
         };
-        if key_l.to_string() == key {
+        if key_l == &key {
             return Some(value_l.to_string());
         }
     }

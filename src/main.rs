@@ -16,15 +16,21 @@ pub fn get_database_path() -> String {
     let args: Vec<String> = args().collect();
     for arg in args {
         if arg.contains("--db") {
-            return String::from(arg.split("=").collect::<Vec<&str>>()[1]);
+            return String::from(match arg.split("=").collect::<Vec<&str>>().get(1) {
+                Some(v) => v,
+                None => {
+                    eprintln!("Failed to read db path from args, falling back to default");
+                    "database.rdb"
+                }
+            });
         }
     }
     return String::from("database.rdb");
 }
 static HELP_MESSAGE: &'static str = "--db=database.rdb — specify the database path";
+
 #[tokio::main]
 async fn main() {
-    let mut database_path = String::from("database.rdb");
     let args: Vec<String> = args().collect();
     for arg in args {
         if arg == "--help" {

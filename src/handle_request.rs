@@ -8,11 +8,11 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
     if request.method == Method::GET {
         let mut status_line = "HTTP/1.1 200 OK";
         let key_name = request.path.replace("/", "");
-        let value = match get_value_from_key(key_name, database_path) {
+        let value = match get_value_from_key(&key_name, database_path) {
             Some(v) => v,
             None => {
                 status_line = "HTTP/1.1 404 NOT FOUND";
-                String::from("Key name not found")
+                format!("Key {} not found", &key_name).to_owned()
             }
         };
         let value_length = value.len();
