@@ -29,7 +29,13 @@ pub fn return_request_struct(unparsed: Vec<String>) -> Option<Request> {
         }
     });
     return Some(Request {
-        path: contents[1].to_string(),
+        path: match contents.get(1) {
+            Some(v) => v,
+            None => {
+                return None;
+            }
+        }
+        .to_string(),
         method: method,
     });
 }

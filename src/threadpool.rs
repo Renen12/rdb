@@ -2,7 +2,7 @@ use core::panic;
 // The joys of Rust: spending one and a half hours building your own ThreadPool implementation, only to realise that copying the one from the Rust book was the better option all along.
 // I hate and love this language.
 use std::{
-    sync::{Arc, Mutex, mpsc},
+    sync::{mpsc, Arc, Mutex},
     thread,
 };
 
@@ -56,14 +56,12 @@ struct Worker {
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(move || {
-            loop {
-                let job = receiver.lock().unwrap().recv().unwrap();
+        let thread = thread::spawn(move || loop {
+            let job = receiver.lock().unwrap().recv().unwrap();
 
-                println!("Worker {id} got a job; executing.");
+            println!("Worker {id} got a job; executing.");
 
-                job();
-            }
+            job();
         });
 
         Worker { id, thread }
