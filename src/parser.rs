@@ -12,7 +12,7 @@ pub struct Request {
     pub path: String,
     pub method: Method,
 }
-pub async fn return_request_struct(unparsed: Vec<String>) -> Option<Request> {
+pub fn return_request_struct(unparsed: Vec<String>) -> Option<Request> {
     let simple_request = match unparsed.get(0) {
         Some(v) => v,
         None => {

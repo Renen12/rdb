@@ -7,17 +7,26 @@ use std::{
     net::{TcpListener, TcpStream},
     process::exit,
 };
-
-use crate::parser::{Method, Request, return_request_struct};
+mod threadpool;
+use crate::{
+    parser::{Method, Request, return_request_struct},
+    threadpool::ThreadPool,
+};
+pub fn get_database_path() -> String {
+    let args: Vec<String> = args().collect();
+    for arg in args {
+        if arg.contains("--db") {
+            return String::from(arg.split("=").collect::<Vec<&str>>()[1]);
+        }
+    }
+    return String::from("database.rdb");
+}
 static HELP_MESSAGE: &'static str = "--db=database.rdb — specify the database path";
 #[tokio::main]
 async fn main() {
     let mut database_path = String::from("database.rdb");
     let args: Vec<String> = args().collect();
     for arg in args {
-        if arg.contains("--db") {
-            database_path = String::from(arg.split("=").collect::<Vec<&str>>()[1]);
-        }
         if arg == "--help" {
             println!("{}", HELP_MESSAGE);
             exit(0);
@@ -32,10 +41,13 @@ async fn main() {
     };
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream, database_path.clone()).await;
+        let pool = ThreadPool::new(4);
+        pool.execute(|| {
+            handle_connection(stream, &get_database_path());
+        });
     }
 }
-async fn handle_connection(stream: TcpStream, database_path: String) {
+fn handle_connection(stream: TcpStream, database_path: &str) {
     let unparsed: Vec<_> = BufReader::new(&stream)
         .lines()
         .map(|r| match r {
@@ -47,7 +59,7 @@ async fn handle_connection(stream: TcpStream, database_path: String) {
         })
         .take_while(|line| !line.is_empty())
         .collect();
-    let request = match return_request_struct(unparsed.clone()).await {
+    let request = match return_request_struct(unparsed.clone()) {
         Some(v) => v,
         None => {
             eprintln!("Cannot build request struct");
@@ -57,5 +69,5 @@ async fn handle_connection(stream: TcpStream, database_path: String) {
             }
         }
     };
-    handle_request::handle_request(request, stream, database_path);
+    handle_request::handle_request(request, stream, database_path.to_owned());
 }

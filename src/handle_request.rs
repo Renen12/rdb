@@ -4,7 +4,6 @@ use crate::{
     database::get_value_from_key,
     parser::{Method, Request},
 };
-
 pub fn handle_request(request: Request, mut stream: TcpStream, database_path: String) {
     if request.method == Method::GET {
         let mut status_line = "HTTP/1.1 200 OK";
