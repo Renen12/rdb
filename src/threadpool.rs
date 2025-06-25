@@ -2,15 +2,27 @@ use core::panic;
 // The joys of Rust: spending one and a half hours building your own ThreadPool implementation, only to realise that copying the one from the Rust book was the better option all along.
 // I hate and love this language.
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{Arc, Mutex, mpsc},
     thread,
 };
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+    sender: Option<mpsc::Sender<Job>>,
 }
-
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        drop(self.sender.take());
+        for worker in &mut self.workers {
+            match worker.thread.take() {
+                Some(v) => v,
+                None => continue,
+            }
+            .join()
+            .unwrap()
+        }
+    }
+}
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
 impl ThreadPool {
@@ -36,7 +48,10 @@ impl ThreadPool {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
-        ThreadPool { workers, sender }
+        ThreadPool {
+            workers,
+            sender: Some(sender),
+        }
     }
 
     pub fn execute<F>(&self, f: F)
@@ -45,25 +60,34 @@ impl ThreadPool {
     {
         let job = Box::new(f);
 
-        self.sender.send(job).unwrap();
+        self.sender.as_ref().unwrap().send(job).unwrap();
     }
 }
 
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(move || loop {
-            let job = receiver.lock().unwrap().recv().unwrap();
-
-            println!("Worker {id} got a job; executing.");
-
-            job();
+        let thread = thread::spawn(move || {
+            loop {
+                let message = receiver.lock().unwrap().recv();
+                match message {
+                    Ok(job) => {
+                        job();
+                    }
+                    Err(_) => {
+                        break;
+                    }
+                }
+            }
         });
 
-        Worker { id, thread }
+        Worker {
+            id,
+            thread: Some(thread),
+        }
     }
 }
