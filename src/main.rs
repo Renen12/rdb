@@ -24,6 +24,12 @@ pub fn return_log_file() -> Option<File> {
         }
     }
 }
+pub fn write_to_log_file_if_available(message: String) {
+    return_log_file().inspect(|mut v| {
+        let _ = v.write(message.as_bytes());
+        return;
+    });
+}
 pub fn get_database_path() -> String {
     let args: Vec<String> = args().collect();
     for arg in args {
