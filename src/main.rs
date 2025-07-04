@@ -99,14 +99,8 @@ fn handle_connection(stream: TcpStream, database_path: &str) {
         }
     };
     return_log_file().inspect(|mut v| {
-        v.write(
-            format!(
-                "Unparsed: {:?}, Path: {}, Method: {:?}\n",
-                unparsed, request.path, request.method
-            )
-            .as_bytes(),
-        )
-        .unwrap();
+        v.write(format!("Request: {:?}", unparsed).as_bytes())
+            .unwrap();
     });
     handle_request::handle_request(request, stream, database_path.to_owned());
 }
