@@ -1,4 +1,4 @@
-use std::{fs, io::Write, net::TcpStream};
+use std::{env::temp_dir, fs, io::Write, net::TcpStream};
 
 use crate::{
     database::{get_db, get_value_from_key, write_to_db},
@@ -7,7 +7,30 @@ use crate::{
     write_to_log_file_if_available,
 };
 pub fn handle_request(request: Request, mut stream: TcpStream, database_path: String) {
-    println!("{:?}", request.headers);
+    // Subscription handling
+    if request.path == "/subscribe" && request.method == Method::POST {
+        for pair in request.headers {
+            if match pair.get(0) {
+                Some(v) => v,
+                None => {
+                    write_to_log_file_if_available("Cannot get header name".to_owned());
+                    return;
+                }
+            } == &String::from("Event-Name")
+            {
+                // Run if the header is Event-Name
+                let event_name = &pair[1];
+                println!("{:?}", pair);
+                let subscribers = match fs::read_to_string("subscribers") {
+                    Ok(v) => v,
+                    Err(_) => {
+                        return;
+                    }
+                };
+            }
+        }
+        return;
+    }
     if request.method == Method::GET {
         let mut status_line = "HTTP/1.1 200 OK";
         let key_name = request.path.replace("/", "");

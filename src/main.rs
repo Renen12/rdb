@@ -1,5 +1,4 @@
 mod database;
-mod events;
 mod handle_request;
 mod parser;
 use std::{
@@ -27,7 +26,7 @@ pub fn return_log_file() -> Option<File> {
 }
 pub fn write_to_log_file_if_available(message: String) {
     return_log_file().inspect(|mut v| {
-        let _ = v.write(message.as_bytes());
+        let _ = v.write((message + "\n").as_bytes());
         return;
     });
 }
