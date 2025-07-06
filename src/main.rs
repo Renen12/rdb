@@ -1,4 +1,5 @@
 mod database;
+mod events;
 mod handle_request;
 mod parser;
 use std::{
@@ -10,7 +11,7 @@ use std::{
 };
 mod threadpool;
 use crate::{
-    parser::{Method, Request, return_request_struct},
+    parser::{return_request_struct, undefined_request},
     threadpool::ThreadPool,
 };
 pub fn return_log_file() -> Option<File> {
@@ -92,10 +93,7 @@ fn handle_connection(stream: TcpStream, database_path: &str) {
         Some(v) => v,
         None => {
             eprintln!("Cannot build request struct");
-            Request {
-                path: "_REQUEST_STRUCT_FAIL".to_owned(),
-                method: Method::UNDEFINED,
-            }
+            undefined_request()
         }
     };
     return_log_file().inspect(|mut v| {

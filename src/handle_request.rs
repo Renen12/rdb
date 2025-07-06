@@ -1,13 +1,13 @@
 use std::{fs, io::Write, net::TcpStream};
 
 use crate::{
-    database::{get_db, get_value_from_key, return_raw_db_file, write_to_db},
+    database::{get_db, get_value_from_key, write_to_db},
     get_database_path,
     parser::{Method, Request},
     write_to_log_file_if_available,
 };
 pub fn handle_request(request: Request, mut stream: TcpStream, database_path: String) {
-    println!("{}", request.path);
+    println!("{:?}", request.headers);
     if request.method == Method::GET {
         let mut status_line = "HTTP/1.1 200 OK";
         let key_name = request.path.replace("/", "");
@@ -20,7 +20,6 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
         };
         let value_length = value.len();
         let response = format!("{status_line}\r\nContent-Length: {value_length}\r\n\r\n{value}");
-        println!("{response}");
         stream.write_all(response.as_bytes()).unwrap();
     }
     if request.method == Method::POST {
