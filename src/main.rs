@@ -13,6 +13,7 @@ use crate::{
     parser::{return_request_struct, undefined_request},
     threadpool::ThreadPool,
 };
+mod events;
 pub fn return_log_file() -> Option<File> {
     let mut options = OpenOptions::new();
     options.create(true);

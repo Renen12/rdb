@@ -1,34 +1,37 @@
-use std::{env::temp_dir, fs, io::Write, net::TcpStream};
+use std::{
+    env::temp_dir,
+    fs,
+    io::Write,
+    net::TcpStream,
+    sync::{Mutex, OnceLock},
+};
 
 use crate::{
     database::{get_db, get_value_from_key, write_to_db},
+    events::{self, Subscription, subscribe, trigger_event},
     get_database_path,
     parser::{Method, Request},
     write_to_log_file_if_available,
 };
+static SUBSCRIPTIONS: OnceLock<Mutex<Vec<Subscription>>> = OnceLock::new();
+
+fn get_subscriptions() -> &'static Mutex<Vec<Subscription>> {
+    SUBSCRIPTIONS.get_or_init(|| Mutex::new(Vec::new()))
+}
 pub fn handle_request(request: Request, mut stream: TcpStream, database_path: String) {
     // Subscription handling
     if request.path == "/subscribe" && request.method == Method::POST {
+        let v = subscribe(request, stream).unwrap();
+        *get_subscriptions().lock().unwrap() = v;
+        return;
+    }
+    if request.path == "/trigger" && request.method == Method::POST {
         for pair in request.headers {
-            if match pair.get(0) {
-                Some(v) => v,
-                None => {
-                    write_to_log_file_if_available("Cannot get header name".to_owned());
-                    return;
-                }
-            } == &String::from("Event-Name")
-            {
-                // Run if the header is Event-Name
-                let event_name = &pair[1];
-                println!("{:?}", pair);
-                let subscribers = match fs::read_to_string("subscribers") {
-                    Ok(v) => v,
-                    Err(_) => {
-                        return;
-                    }
-                };
+            if pair[0] == "Event-Name" {
+                trigger_event(&pair[1], get_subscriptions());
             }
         }
+
         return;
     }
     if request.method == Method::GET {
