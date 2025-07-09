@@ -32,11 +32,16 @@ pub fn subscribe(request: Request, stream: TcpStream) -> Option<Subscription> {
     }
     None
 }
-pub fn trigger_event(event_name: &String, subscriptions: &'static Mutex<Vec<Subscription>>) {
-    println!("{:?}", subscriptions);
+pub fn trigger_event(
+    event_name: &String,
+    subscriptions: &'static Mutex<Vec<Subscription>>,
+    response_to_subscribers: &String,
+) {
     for sub in subscriptions.lock().unwrap().iter_mut() {
         if sub.name == *event_name {
-            sub.stream.write_all("triggered".as_bytes()).unwrap();
+            sub.stream
+                .write_all(response_to_subscribers.as_bytes())
+                .unwrap();
         }
     }
 }

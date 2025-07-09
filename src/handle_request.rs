@@ -17,20 +17,12 @@ static SUBSCRIPTIONS: OnceLock<Mutex<Vec<Subscription>>> = OnceLock::new();
 fn get_subscriptions() -> &'static Mutex<Vec<Subscription>> {
     SUBSCRIPTIONS.get_or_init(|| Mutex::new(Vec::new()))
 }
+
 pub fn handle_request(request: Request, mut stream: TcpStream, database_path: String) {
     // Subscription handling
     if request.path == "/subscribe" && request.method == Method::POST {
         let v = subscribe(request, stream).unwrap();
         get_subscriptions().lock().unwrap().push(v);
-        return;
-    }
-    if request.path == "/trigger" && request.method == Method::POST {
-        for pair in request.headers {
-            if pair[0] == "Event-Name" {
-                trigger_event(&pair[1], get_subscriptions());
-            }
-        }
-
         return;
     }
     if request.method == Method::GET {
@@ -48,7 +40,7 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
         stream.write_all(response.as_bytes()).unwrap();
     }
     if request.method == Method::POST {
-        let mut _status_line = "HTTP/1.1 200 OK";
+        let mut status_line = "HTTP/1.1 200 OK";
         let raw_path = request.path.replace("/", "");
         if !raw_path.contains("?") {
             write_to_log_file_if_available(format!(
@@ -83,6 +75,19 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
             }
             .to_owned();
             write_to_db(key.to_owned(), value.to_owned());
+            // Trigger event for subscribed clients
+            for pair in request.headers {
+                if pair[0] == "Event-Name" {
+                    let value_len = value.len();
+                    trigger_event(
+                        &pair[1],
+                        get_subscriptions(),
+                        &format!("{status_line}\r\nContent-Length: {value_len}\r\n\r\n{value}"),
+                    );
+                }
+            }
+
+            return;
         }
     }
     if request.method == Method::DELETE {
