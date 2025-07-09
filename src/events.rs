@@ -9,7 +9,7 @@ pub struct Subscription {
     pub id: usize,
     name: String,
 }
-pub fn subscribe(request: Request, stream: TcpStream) -> Option<Vec<Subscription>> {
+pub fn subscribe(request: Request, stream: TcpStream) -> Option<Subscription> {
     for pair in request.headers {
         if match pair.get(0) {
             Some(v) => v,
@@ -23,11 +23,11 @@ pub fn subscribe(request: Request, stream: TcpStream) -> Option<Vec<Subscription
             let event_name = &pair[1];
             let mut rng = rand::rng();
             let id: usize = rng.random_range(0..10000);
-            return Some(vec![Subscription {
+            return Some(Subscription {
                 stream,
                 id,
                 name: event_name.clone(),
-            }]);
+            });
         }
     }
     None

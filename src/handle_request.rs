@@ -22,7 +22,7 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
     // Subscription handling
     if request.path == "/subscribe" && request.method == Method::POST {
         let v = subscribe(request, stream).unwrap();
-        *get_subscriptions().lock().unwrap() = v;
+        get_subscriptions().lock().unwrap().push(v);
         return;
     }
     if request.path == "/trigger" && request.method == Method::POST {
