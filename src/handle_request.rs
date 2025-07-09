@@ -1,5 +1,4 @@
 use std::{
-    env::temp_dir,
     fs,
     io::Write,
     net::TcpStream,
@@ -8,7 +7,7 @@ use std::{
 
 use crate::{
     database::{get_db, get_value_from_key, write_to_db},
-    events::{self, Subscription, subscribe, trigger_event},
+    events::{Subscription, subscribe, trigger_event},
     get_database_path,
     parser::{Method, Request},
     write_to_log_file_if_available,
