@@ -1,13 +1,15 @@
 use std::{io::Write, net::TcpStream, sync::Mutex};
 
-use rand::Rng;
-
 use crate::{parser::Request, write_to_log_file_if_available};
 #[derive(Debug)]
 pub struct Subscription {
     pub stream: TcpStream,
-    pub id: usize,
     name: String,
+}
+impl Drop for Subscription {
+    fn drop(&mut self) {
+        let _ = self.stream.shutdown(std::net::Shutdown::Both);
+    }
 }
 pub fn subscribe(request: Request, stream: TcpStream) -> Option<Subscription> {
     for pair in request.headers {
@@ -21,11 +23,8 @@ pub fn subscribe(request: Request, stream: TcpStream) -> Option<Subscription> {
         {
             // Run if the header is Event-Name
             let event_name = &pair[1];
-            let mut rng = rand::rng();
-            let id: usize = rng.random_range(0..10000);
             return Some(Subscription {
                 stream,
-                id,
                 name: event_name.clone(),
             });
         }

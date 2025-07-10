@@ -40,7 +40,7 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
         stream.write_all(response.as_bytes()).unwrap();
     }
     if request.method == Method::POST {
-        let mut status_line = "HTTP/1.1 200 OK";
+        let status_line = "HTTP/1.1 200 OK";
         let raw_path = request.path.replace("/", "");
         if !raw_path.contains("?") {
             write_to_log_file_if_available(format!(
@@ -98,7 +98,7 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
         let mut db_pairs = split.collect::<Vec<&str>>();
         let mut found = false;
         let mut status_line = "HTTP/1.1 204 No Content";
-        for line in db_pairs.clone() {
+        for line in &db_pairs {
             let split: &Vec<&str> = &line.split("=").collect();
             let key_in_db = match split.get(0) {
                 Some(v) => v,

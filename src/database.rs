@@ -33,14 +33,13 @@ pub fn write_to_db(key: String, new_value: String) {
             }
         };
         if key_l == key {
-            // TODO improve efficiency
-            // This does not feel especially efficient with clone(), should I use an Rc or alike?
-            let mut new = split.clone();
+            let mut new: Vec<_> = split.iter().collect();
             let formatted = &format!("{}={}", &key, &new_value);
-            new[index] = formatted;
+            let str_v = formatted.as_str();
+            new[index] = &str_v;
             let mut final_string = String::new();
             for value in new {
-                final_string.push_str(&format!("{value}\n"));
+                final_string.push_str(&format!("\n{value}"));
             }
             let mut options = File::options();
             options.append(false);
