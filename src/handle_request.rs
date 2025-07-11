@@ -21,7 +21,10 @@ fn get_subscriptions() -> &'static Mutex<Vec<Subscription>> {
 pub fn handle_request(request: Request, mut stream: TcpStream, database_path: String) {
     // Subscription handling
     if request.path == "/subscribe" && request.method == Method::POST {
-        let v = subscribe(request, stream).unwrap();
+        let v = match subscribe(request, stream) {
+            Some(v) => v,
+            None => {return;}
+        };
         get_subscriptions().lock().unwrap().push(v);
         return;
     }
@@ -86,7 +89,7 @@ pub fn handle_request(request: Request, mut stream: TcpStream, database_path: St
                     );
                 }
             }
-
+            let _ = stream.write_all("HTTP/1.1 200 0K\r\n\r\n\r\n".as_bytes());
             return;
         }
     }

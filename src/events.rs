@@ -38,9 +38,10 @@ pub fn trigger_event(
 ) {
     for sub in subscriptions.lock().unwrap().iter_mut() {
         if sub.name == *event_name {
-            sub.stream
-                .write_all(response_to_subscribers.as_bytes())
-                .unwrap();
+            let _ = sub.stream
+                .write_all(response_to_subscribers.as_bytes()).inspect_err(|_| {
+                    write_to_log_file_if_available(String::from("\nCannot write to subscriber stream"));
+                });
         }
     }
 }
